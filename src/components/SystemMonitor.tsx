@@ -35,7 +35,7 @@ const Graph = ({ label, value, color = "text-neon-cyan" }: { label: string, valu
 };
 
 export const SystemMonitor = ({ onOpenSetup }: { onOpenSetup: () => void }) => {
-  const { isLocalConnected, config, updateConfig, isAutoPilot, setAutoPilot, petColor, setPetColor, petType, setPetType, setCustomModelUrl } = useStore();
+  const { isLocalConnected, config, updateConfig, isAutoPilot, setAutoPilot, petColor, setPetColor, petType, setPetType, setCustomModelUrl, isVisionActive, setVisionActive, isMiningActive, setMiningActive, isBrainCoreActive, setBrainCoreActive } = useStore();
   const [cpu, setCpu] = useState(32);
   const [ram, setRam] = useState(64);
   const [net, setNet] = useState(12);
@@ -81,22 +81,24 @@ export const SystemMonitor = ({ onOpenSetup }: { onOpenSetup: () => void }) => {
             </select>
           </div>
 
-          {petType === 'custom' && (
-            <div className="flex items-center justify-between mt-2 pt-2 border-t border-neon-cyan/30">
-              <span className="text-[10px] tracking-wider">UPLOAD</span>
+          <div className="flex items-center justify-between mt-2 pt-2 border-t border-neon-cyan/30">
+            <span className="text-[10px] tracking-wider">IMPORT 3D</span>
+            <label className="cursor-pointer bg-neon-cyan/10 hover:bg-neon-cyan/30 border border-neon-cyan/50 text-neon-cyan text-[8px] px-2 py-1 text-center w-24 transition-colors">
+              SELECT .GLB
               <input
                 type="file"
                 accept=".glb,.gltf"
+                className="hidden"
                 onChange={(e) => {
                   const file = e.target.files?.[0];
                   if (file) {
                     setCustomModelUrl(URL.createObjectURL(file));
+                    setPetType('custom');
                   }
                 }}
-                className="w-24 text-[8px] text-neon-cyan file:bg-neon-cyan/20 file:border-0 file:text-neon-cyan file:px-2 file:py-1 file:cursor-pointer"
               />
-            </div>
-          )}
+            </label>
+          </div>
 
           <div className="flex items-center justify-between mt-2">
             <span className="text-[10px] tracking-wider">COLOR</span>
@@ -108,6 +110,30 @@ export const SystemMonitor = ({ onOpenSetup }: { onOpenSetup: () => void }) => {
             />
           </div>
         </div>
+
+        {/* Agent Vision Toggle */}
+        <button 
+          onClick={() => setVisionActive(!isVisionActive)}
+          className={`w-full py-2 text-xs font-bold tracking-widest border transition-all ${isVisionActive ? 'bg-neon-cyan text-black border-neon-cyan shadow-[0_0_10px_rgba(0,255,204,0.8)]' : 'bg-transparent text-neon-cyan border-neon-cyan hover:bg-neon-cyan/20'}`}
+        >
+          {isVisionActive ? '👁️ VISION: ACTIVE' : '👁️ VISION: OFFLINE'}
+        </button>
+
+        {/* Token Forge Toggle */}
+        <button 
+          onClick={() => setMiningActive(!isMiningActive)}
+          className={`w-full py-2 text-xs font-bold tracking-widest border transition-all ${isMiningActive ? 'bg-yellow-500 text-black border-yellow-500 shadow-[0_0_10px_rgba(234,179,8,0.8)]' : 'bg-transparent text-yellow-500 border-yellow-500 hover:bg-yellow-500/20'}`}
+        >
+          {isMiningActive ? '⚡ FORGE: ACTIVE' : '⚡ FORGE: OFFLINE'}
+        </button>
+
+        {/* Brain Core Toggle */}
+        <button 
+          onClick={() => setBrainCoreActive(!isBrainCoreActive)}
+          className={`w-full py-2 text-xs font-bold tracking-widest border transition-all ${isBrainCoreActive ? 'bg-purple-500 text-black border-purple-500 shadow-[0_0_10px_rgba(168,85,247,0.8)]' : 'bg-transparent text-purple-500 border-purple-500 hover:bg-purple-500/20'}`}
+        >
+          {isBrainCoreActive ? '🧠 BRAIN: ACTIVE' : '🧠 BRAIN: OFFLINE'}
+        </button>
 
         {/* Auto-Pilot Toggle */}
         <div className="flex items-center justify-between border border-neon-cyan/30 p-2 bg-neon-cyan/5">

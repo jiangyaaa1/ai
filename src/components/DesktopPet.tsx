@@ -1,8 +1,10 @@
-import React, { useRef, useState, Suspense } from 'react';
+import React, { useRef, useState, Suspense, useEffect } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { Float, ContactShadows, Html, useGLTF, Center } from '@react-three/drei';
 import { useStore } from '../store';
 import * as THREE from 'three';
+import { runAgentLoop } from '../lib/agent';
+import { Mic, MicOff, Send, Loader2 } from 'lucide-react';
 
 const CustomModel = ({ url, onClick }: { url: string, onClick: () => void }) => {
   const { scene } = useGLTF(url);
@@ -264,7 +266,7 @@ const ChibiCaier = ({ color }: { color: string }) => {
 const AnimePet = ({ color, type, onClick }: { color: string, type: string, onClick: () => void }) => {
   const group = useRef<THREE.Group>(null);
   const [hovered, setHover] = useState(false);
-  const { customModelUrl } = useStore();
+  const { customModelUrl, setCustomModelUrl, setPetType } = useStore();
 
   useFrame((state) => {
     if (group.current) {
@@ -315,8 +317,23 @@ const AnimePet = ({ color, type, onClick }: { color: string, type: string, onCli
       
       {type === 'custom' && !customModelUrl && (
         <Html center>
-          <div className="text-neon-cyan text-sm whitespace-nowrap bg-black/80 p-4 border border-neon-cyan">
-            Please upload a .glb model in SYS_MONITOR
+          <div className="flex flex-col items-center justify-center bg-black/90 p-6 border-2 border-neon-cyan rounded-lg shadow-[0_0_20px_rgba(0,255,204,0.4)]">
+            <div className="text-neon-cyan text-sm mb-4 font-bold tracking-widest">IMPORT CUSTOM 3D MODEL</div>
+            <label className="cursor-pointer bg-neon-cyan/20 hover:bg-neon-cyan/40 text-neon-cyan px-6 py-2 rounded border border-neon-cyan transition-all font-bold text-center">
+              <span>SELECT .GLB / .GLTF FILE</span>
+              <input
+                type="file"
+                accept=".glb,.gltf"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    setCustomModelUrl(URL.createObjectURL(file));
+                    setPetType('custom');
+                  }
+                }}
+              />
+            </label>
           </div>
         </Html>
       )}
@@ -325,18 +342,71 @@ const AnimePet = ({ color, type, onClick }: { color: string, type: string, onCli
 };
 
 export const DesktopPet = () => {
-  const { setMinimized, petColor, petType } = useStore();
+  const { setMinimized, petColor, petType, isAgentRunning } = useStore();
+  const [input, setInput] = useState('');
+  const [isListening, setIsListening] = useState(false);
+  const recognitionRef = useRef<any>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const toggleListening = () => {
+    if (isListening) {
+      recognitionRef.current?.stop();
+      setIsListening(false);
+      return;
+    }
+
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert("Speech recognition is not supported in this browser. Please use Chrome or Edge.");
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognitionRef.current = recognition;
+    recognition.lang = navigator.language || 'zh-CN';
+    recognition.continuous = false;
+    recognition.interimResults = false;
+
+    recognition.onstart = () => setIsListening(true);
+    recognition.onresult = (event: any) => {
+      const transcript = event.results[0][0].transcript;
+      setInput(prev => prev + (prev ? ' ' : '') + transcript);
+    };
+    recognition.onerror = (event: any) => {
+      console.error('Speech recognition error', event.error);
+      setIsListening(false);
+    };
+    recognition.onend = () => setIsListening(false);
+
+    recognition.start();
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!input.trim() || isAgentRunning) return;
+    const task = input.trim();
+    setInput('');
+    runAgentLoop(task);
+  };
 
   return (
-    <div className="w-full h-screen bg-[#040b14] flex items-center justify-center relative overflow-hidden font-mono">
+    <div className="w-full h-screen bg-[#040b14] flex flex-col items-center justify-center relative overflow-hidden font-mono">
       {/* Matrix/Cyberpunk background hint */}
       <div className="absolute inset-0 scanlines opacity-50 pointer-events-none"></div>
       
-      <div className="absolute top-4 left-4 text-neon-cyan/50 text-xs">
-        OMNI-AGENT [ANIME_MODE: ACTIVE]
+      <div className="absolute top-4 left-4 flex items-center gap-4 z-10">
+        <div className="text-neon-cyan/50 text-xs">
+          OMNI-AGENT [ANIME_MODE: ACTIVE]
+        </div>
+        <button 
+          onClick={() => setMinimized(false)}
+          className="text-xs bg-neon-cyan/10 border border-neon-cyan/50 text-neon-cyan px-3 py-1 hover:bg-neon-cyan hover:text-black transition-colors"
+        >
+          [ OPEN_TERMINAL ]
+        </button>
       </div>
 
-      <div className="w-full h-full max-w-2xl max-h-[800px]">
+      <div className="w-full flex-1 max-w-2xl">
         <Canvas camera={{ position: [0, 1, 6], fov: 50 }}>
           <ambientLight intensity={0.6} />
           <directionalLight position={[5, 5, 5]} intensity={1.5} />
@@ -353,6 +423,41 @@ export const DesktopPet = () => {
           
           <ContactShadows position={[0, -1.5, 0]} opacity={0.4} scale={10} blur={2} far={4} />
         </Canvas>
+      </div>
+
+      {/* Floating Input Bar */}
+      <div className="absolute bottom-10 left-1/2 -translate-x-1/2 w-full max-w-xl px-4 z-20">
+        <form 
+          onSubmit={handleSubmit} 
+          className="bg-black/80 border border-neon-cyan/50 rounded-full p-2 flex items-center gap-2 shadow-[0_0_20px_rgba(0,255,204,0.2)] backdrop-blur-sm transition-all focus-within:border-neon-cyan focus-within:shadow-[0_0_30px_rgba(0,255,204,0.4)]"
+        >
+          <button
+            type="button"
+            onClick={toggleListening}
+            className={`p-3 rounded-full transition-colors ${isListening ? 'bg-red-500/20 text-red-400 animate-pulse shadow-[0_0_10px_rgba(239,68,68,0.5)]' : 'text-neon-cyan/70 hover:text-neon-cyan hover:bg-neon-cyan/10'}`}
+            title="Voice Input"
+          >
+            {isListening ? <Mic size={20} /> : <MicOff size={20} />}
+          </button>
+          
+          <input
+            ref={inputRef}
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            disabled={isAgentRunning}
+            placeholder={isAgentRunning ? "Agent is processing..." : "Tell me what to do..."}
+            className="flex-1 bg-transparent border-none outline-none text-neon-cyan caret-neon-cyan placeholder-neon-cyan/30 text-sm px-2"
+          />
+
+          <button
+            type="submit"
+            disabled={!input.trim() || isAgentRunning}
+            className="p-3 rounded-full text-neon-cyan/70 hover:text-neon-cyan hover:bg-neon-cyan/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            {isAgentRunning ? <Loader2 size={20} className="animate-spin" /> : <Send size={20} />}
+          </button>
+        </form>
       </div>
     </div>
   );

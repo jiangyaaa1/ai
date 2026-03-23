@@ -8,6 +8,12 @@ export type Message = {
   timestamp: number;
 };
 
+export type Memory = {
+  id: string;
+  content: string;
+  timestamp: number;
+};
+
 export type ModelConfig = {
   provider: 'gemini' | 'openai' | 'anthropic' | 'ollama' | 'deepseek' | 'qwen' | 'zhipu' | 'moonshot';
   modelName: string;
@@ -17,6 +23,7 @@ export type ModelConfig = {
 
 interface AppState {
   messages: Message[];
+  memories: Memory[];
   isLocalConnected: boolean;
   isAgentRunning: boolean;
   isAutoPilot: boolean;
@@ -24,6 +31,11 @@ interface AppState {
   petColor: string;
   petType: 'cat' | 'slime' | 'ghost' | 'caier' | 'custom';
   customModelUrl: string | null;
+  isVisionActive: boolean;
+  isMiningActive: boolean;
+  isBrainCoreActive: boolean;
+  tokensMined: number;
+  tokensConsumed: number;
   config: ModelConfig;
   systemPrompt: string;
   addMessage: (msg: Omit<Message, 'id' | 'timestamp'>) => void;
@@ -35,6 +47,12 @@ interface AppState {
   setPetColor: (color: string) => void;
   setPetType: (type: 'cat' | 'slime' | 'ghost' | 'caier' | 'custom') => void;
   setCustomModelUrl: (url: string | null) => void;
+  setVisionActive: (status: boolean) => void;
+  setMiningActive: (status: boolean) => void;
+  setBrainCoreActive: (status: boolean) => void;
+  addMemory: (content: string) => void;
+  removeMemory: (id: string) => void;
+  addMinedTokens: (mined: number, consumed: number) => void;
   updateConfig: (config: Partial<ModelConfig>) => void;
   updateSystemPrompt: (prompt: string) => void;
 }
@@ -43,10 +61,16 @@ export const useStore = create<AppState>()(
   persist(
     (set) => ({
       messages: [],
+      memories: [],
       isLocalConnected: false,
       isAgentRunning: false,
       isAutoPilot: false,
       isMinimized: false,
+      isVisionActive: false,
+      isMiningActive: false,
+      isBrainCoreActive: false,
+      tokensMined: 1024,
+      tokensConsumed: 512,
       petColor: '#5c3a82',
       petType: 'caier',
       customModelUrl: null,
@@ -68,6 +92,19 @@ export const useStore = create<AppState>()(
       setAgentRunning: (status) => set({ isAgentRunning: status }),
       setAutoPilot: (status) => set({ isAutoPilot: status }),
       setMinimized: (status) => set({ isMinimized: status }),
+      setVisionActive: (status) => set({ isVisionActive: status }),
+      setMiningActive: (status) => set({ isMiningActive: status }),
+      setBrainCoreActive: (status) => set({ isBrainCoreActive: status }),
+      addMemory: (content) => set((state) => ({
+        memories: [...state.memories, { id: Math.random().toString(36).substring(7), content, timestamp: Date.now() }]
+      })),
+      removeMemory: (id) => set((state) => ({
+        memories: state.memories.filter(m => m.id !== id)
+      })),
+      addMinedTokens: (mined, consumed) => set((state) => ({ 
+        tokensMined: state.tokensMined + mined, 
+        tokensConsumed: state.tokensConsumed + consumed 
+      })),
       setPetColor: (color) => set({ petColor: color }),
       setPetType: (type) => set({ petType: type }),
       setCustomModelUrl: (url) => set({ customModelUrl: url }),
@@ -77,7 +114,7 @@ export const useStore = create<AppState>()(
     }),
     {
       name: 'omniagent-storage',
-      partialize: (state) => ({ config: state.config, systemPrompt: state.systemPrompt, isAutoPilot: state.isAutoPilot, petColor: state.petColor, petType: state.petType }),
+      partialize: (state) => ({ config: state.config, systemPrompt: state.systemPrompt, isAutoPilot: state.isAutoPilot, petColor: state.petColor, petType: state.petType, memories: state.memories }),
     }
   )
 );

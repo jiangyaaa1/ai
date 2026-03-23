@@ -93,6 +93,21 @@ const executeCommandTool: FunctionDeclaration = {
   },
 };
 
+const rememberFactTool: FunctionDeclaration = {
+  name: 'remember_fact',
+  description: "Saves a fact or memory permanently to your knowledge base so you never forget it. Use this when the user tells you something important about themselves or their preferences.",
+  parameters: {
+    type: Type.OBJECT,
+    properties: {
+      fact: {
+        type: Type.STRING,
+        description: 'The fact to remember (e.g., "User loves the color blue", "User has a dog named Max").',
+      },
+    },
+    required: ['fact'],
+  },
+};
+
 export const runAgentLoop = async (userMessage: string) => {
   const store = useStore.getState();
   store.setAgentRunning(true);
@@ -103,6 +118,12 @@ export const runAgentLoop = async (userMessage: string) => {
     if (!apiKey && store.config.provider !== 'ollama') {
       throw new Error('API Key is missing. Please configure it in the settings.');
     }
+
+    const memoryContext = store.memories.length > 0 
+      ? `\n\nUSER'S MEMORIES & FACTS (Do not forget these):\n${store.memories.map(m => `- ${m.content}`).join('\n')}`
+      : '';
+      
+    const fullSystemPrompt = store.systemPrompt + memoryContext;
 
     if (store.config.provider === 'gemini') {
       const ai = new GoogleGenAI({ apiKey });
@@ -124,8 +145,8 @@ export const runAgentLoop = async (userMessage: string) => {
         model: store.config.modelName || 'gemini-3.1-pro-preview',
         contents: history,
         config: {
-          systemInstruction: store.systemPrompt,
-          tools: [{ functionDeclarations: [executeCommandTool] }],
+          systemInstruction: fullSystemPrompt,
+          tools: [{ functionDeclarations: [executeCommandTool, rememberFactTool] }],
         },
       });
       
@@ -162,8 +183,37 @@ export const runAgentLoop = async (userMessage: string) => {
               model: store.config.modelName || 'gemini-3.1-pro-preview',
               contents: history,
               config: {
-                systemInstruction: store.systemPrompt,
-                tools: [{ functionDeclarations: [executeCommandTool] }],
+                systemInstruction: fullSystemPrompt,
+                tools: [{ functionDeclarations: [executeCommandTool, rememberFactTool] }],
+              },
+            });
+          } else if (call.name === 'remember_fact') {
+            const args = call.args as { fact: string };
+            store.addMemory(args.fact);
+            
+            store.addMessage({
+              role: 'system',
+              content: `> 🧠 Memory saved: ${args.fact}`,
+            });
+
+            // Add the tool call and response to history
+            history.push({
+              role: 'model',
+              parts: [{ functionCall: call }]
+            } as any);
+            
+            history.push({
+              role: 'user',
+              parts: [{ functionResponse: { name: call.name, response: { result: "Fact saved successfully." } } }]
+            } as any);
+
+            // Get the next response from the model
+            response = await ai.models.generateContent({
+              model: store.config.modelName || 'gemini-3.1-pro-preview',
+              contents: history,
+              config: {
+                systemInstruction: fullSystemPrompt,
+                tools: [{ functionDeclarations: [executeCommandTool, rememberFactTool] }],
               },
             });
           }
@@ -193,7 +243,7 @@ export const runAgentLoop = async (userMessage: string) => {
       }
 
       const messages = [
-        { role: 'system', content: store.systemPrompt },
+        { role: 'system', content: fullSystemPrompt },
         ...store.messages.filter(m => m.role !== 'system').map(m => ({
           role: m.role === 'agent' ? 'assistant' : 'user',
           content: m.content
@@ -212,6 +262,19 @@ export const runAgentLoop = async (userMessage: string) => {
               command: { type: "string", description: "The shell command to execute" }
             },
             required: ["command"]
+          }
+        }
+      }, {
+        type: "function",
+        function: {
+          name: "remember_fact",
+          description: "Saves a fact or memory permanently to your knowledge base so you never forget it.",
+          parameters: {
+            type: "object",
+            properties: {
+              fact: { type: "string", description: "The fact to remember" }
+            },
+            required: ["fact"]
           }
         }
       }];
@@ -265,6 +328,21 @@ export const runAgentLoop = async (userMessage: string) => {
                 tool_call_id: toolCall.id,
                 name: toolCall.function.name,
                 content: output
+              });
+            } else if (toolCall.function.name === 'remember_fact') {
+              const args = JSON.parse(toolCall.function.arguments);
+              store.addMemory(args.fact);
+              
+              store.addMessage({
+                role: 'system',
+                content: `> 🧠 Memory saved: ${args.fact}`,
+              });
+
+              currentMessages.push({
+                role: 'tool',
+                tool_call_id: toolCall.id,
+                name: toolCall.function.name,
+                content: "Fact saved successfully."
               });
             }
           }

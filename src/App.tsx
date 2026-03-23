@@ -5,6 +5,9 @@ import { BottomPanels } from './components/BottomPanels';
 import { LocalSetupModal } from './components/LocalSetupModal';
 import { TopTabs } from './components/TopTabs';
 import { DesktopPet } from './components/DesktopPet';
+import { AgentVision } from './components/AgentVision';
+import { TokenForge } from './components/TokenForge';
+import { BrainCore } from './components/BrainCore';
 import { useStore } from './store';
 
 export default function App() {
@@ -12,7 +15,14 @@ export default function App() {
   const { isMinimized } = useStore();
 
   if (isMinimized) {
-    return <DesktopPet />;
+    return (
+      <>
+        <DesktopPet />
+        <AgentVision />
+        <TokenForge />
+        <BrainCore />
+      </>
+    );
   }
 
   return (
@@ -24,6 +34,9 @@ export default function App() {
         <Terminal />
       </div>
       <BottomPanels />
+      <AgentVision />
+      <TokenForge />
+      <BrainCore />
       {isSetupOpen && <LocalSetupModal onClose={() => setIsSetupOpen(false)} />}
     </div>
   );

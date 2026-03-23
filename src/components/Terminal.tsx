@@ -1,17 +1,52 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useStore } from '../store';
 import { runAgentLoop } from '../lib/agent';
-import { Terminal as TerminalIcon, Loader2 } from 'lucide-react';
+import { Terminal as TerminalIcon, Loader2, Mic, MicOff } from 'lucide-react';
 
 export const Terminal = () => {
   const { messages, isAgentRunning, clearMessages } = useStore();
   const [input, setInput] = useState('');
+  const [isListening, setIsListening] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const recognitionRef = useRef<any>(null);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isAgentRunning]);
+
+  const toggleListening = () => {
+    if (isListening) {
+      recognitionRef.current?.stop();
+      setIsListening(false);
+      return;
+    }
+
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert("Speech recognition is not supported in this browser. Please use Chrome or Edge.");
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognitionRef.current = recognition;
+    recognition.lang = navigator.language || 'zh-CN';
+    recognition.continuous = false;
+    recognition.interimResults = false;
+
+    recognition.onstart = () => setIsListening(true);
+    recognition.onresult = (event: any) => {
+      const transcript = event.results[0][0].transcript;
+      setInput(prev => prev + (prev ? ' ' : '') + transcript);
+    };
+    recognition.onerror = (event: any) => {
+      console.error('Speech recognition error', event.error);
+      setIsListening(false);
+    };
+    recognition.onend = () => setIsListening(false);
+
+    recognition.start();
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -70,7 +105,7 @@ export const Terminal = () => {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="flex items-center mt-2">
+        <form onSubmit={handleSubmit} className="flex items-center mt-2 relative">
           <span className="text-green-400 font-bold">root@omniagent</span>
           <span className="text-white">:</span>
           <span className="text-blue-400">~</span>
@@ -81,9 +116,18 @@ export const Terminal = () => {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             disabled={isAgentRunning}
-            className="flex-1 bg-transparent border-none outline-none text-neon-cyan ml-2 caret-neon-cyan w-full"
+            placeholder="Type or speak natural language..."
+            className="flex-1 bg-transparent border-none outline-none text-neon-cyan ml-2 caret-neon-cyan w-full placeholder-neon-cyan/30"
             autoFocus
           />
+          <button
+            type="button"
+            onClick={toggleListening}
+            className={`ml-2 p-1.5 rounded-full transition-colors ${isListening ? 'bg-red-500/20 text-red-400 animate-pulse shadow-[0_0_10px_rgba(239,68,68,0.5)]' : 'text-neon-cyan/50 hover:text-neon-cyan hover:bg-neon-cyan/10'}`}
+            title="Voice Input"
+          >
+            {isListening ? <Mic size={16} /> : <MicOff size={16} />}
+          </button>
         </form>
         <div ref={endRef} />
       </div>
