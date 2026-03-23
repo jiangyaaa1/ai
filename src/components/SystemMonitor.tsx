@@ -35,7 +35,7 @@ const Graph = ({ label, value, color = "text-neon-cyan" }: { label: string, valu
 };
 
 export const SystemMonitor = ({ onOpenSetup }: { onOpenSetup: () => void }) => {
-  const { isLocalConnected, config, updateConfig, isAutoPilot, setAutoPilot, petColor, setPetColor, petType, setPetType } = useStore();
+  const { isLocalConnected, config, updateConfig, isAutoPilot, setAutoPilot, petColor, setPetColor, petType, setPetType, setCustomModelUrl } = useStore();
   const [cpu, setCpu] = useState(32);
   const [ram, setRam] = useState(64);
   const [net, setNet] = useState(12);
@@ -73,14 +73,32 @@ export const SystemMonitor = ({ onOpenSetup }: { onOpenSetup: () => void }) => {
               onChange={(e) => setPetType(e.target.value as any)}
               className="bg-black border border-neon-cyan/50 text-neon-cyan text-[10px] p-1 outline-none w-24"
             >
-              <option value="caier">Cai'er (Assassin)</option>
+              <option value="custom">Custom 3D (.glb)</option>
+              <option value="caier">Cai'er (Q-version)</option>
               <option value="cat">Neko (Cat)</option>
               <option value="slime">Slime</option>
               <option value="ghost">Ghost</option>
             </select>
           </div>
 
-          <div className="flex items-center justify-between">
+          {petType === 'custom' && (
+            <div className="flex items-center justify-between mt-2 pt-2 border-t border-neon-cyan/30">
+              <span className="text-[10px] tracking-wider">UPLOAD</span>
+              <input
+                type="file"
+                accept=".glb,.gltf"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    setCustomModelUrl(URL.createObjectURL(file));
+                  }
+                }}
+                className="w-24 text-[8px] text-neon-cyan file:bg-neon-cyan/20 file:border-0 file:text-neon-cyan file:px-2 file:py-1 file:cursor-pointer"
+              />
+            </div>
+          )}
+
+          <div className="flex items-center justify-between mt-2">
             <span className="text-[10px] tracking-wider">COLOR</span>
             <input 
               type="color" 

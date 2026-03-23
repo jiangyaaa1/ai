@@ -1,8 +1,40 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, Suspense } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { Float, ContactShadows, Html } from '@react-three/drei';
+import { Float, ContactShadows, Html, useGLTF, Center } from '@react-three/drei';
 import { useStore } from '../store';
 import * as THREE from 'three';
+
+const CustomModel = ({ url, onClick }: { url: string, onClick: () => void }) => {
+  const { scene } = useGLTF(url);
+  const group = useRef<THREE.Group>(null);
+  const [hovered, setHover] = useState(false);
+
+  useFrame((state) => {
+    if (group.current) {
+      group.current.rotation.y = Math.sin(state.clock.elapsedTime * 0.5) * 0.1;
+    }
+  });
+
+  return (
+    <group
+      ref={group}
+      onClick={onClick}
+      onPointerOver={() => { setHover(true); document.body.style.cursor = 'pointer'; }}
+      onPointerOut={() => { setHover(false); document.body.style.cursor = 'auto'; }}
+    >
+      <Center>
+        <primitive object={scene} scale={1.5} />
+      </Center>
+      {hovered && (
+        <Html position={[0, 2.5, 0]} center>
+          <div className="bg-black/90 border-2 border-purple-500 text-purple-400 px-4 py-2 text-sm whitespace-nowrap rounded-full font-bold shadow-lg animate-pulse">
+            我会保护你的... (点击唤醒)
+          </div>
+        </Html>
+      )}
+    </group>
+  );
+};
 
 const AnimeFace = ({ zOffset = 1.01 }: { zOffset?: number }) => (
   <group position={[0, 0, zOffset]}>
@@ -232,6 +264,7 @@ const ChibiCaier = ({ color }: { color: string }) => {
 const AnimePet = ({ color, type, onClick }: { color: string, type: string, onClick: () => void }) => {
   const group = useRef<THREE.Group>(null);
   const [hovered, setHover] = useState(false);
+  const { customModelUrl } = useStore();
 
   useFrame((state) => {
     if (group.current) {
@@ -249,31 +282,45 @@ const AnimePet = ({ color, type, onClick }: { color: string, type: string, onCli
   };
 
   return (
-    <group 
-      ref={group} 
-      onClick={onClick} 
-      onPointerOver={() => {
-        setHover(true);
-        document.body.style.cursor = 'pointer';
-      }} 
-      onPointerOut={() => {
-        setHover(false);
-        document.body.style.cursor = 'auto';
-      }}
-    >
-      {type === 'cat' && <Neko color={color} />}
-      {type === 'slime' && <Slime color={color} />}
-      {type === 'ghost' && <Ghost color={color} />}
-      {type === 'caier' && <ChibiCaier color={color} />}
+    <Suspense fallback={<Html center><div className="text-neon-cyan font-bold animate-pulse whitespace-nowrap bg-black/80 px-4 py-2 border border-neon-cyan">LOADING MODEL...</div></Html>}>
+      {type !== 'custom' && (
+        <group 
+          ref={group} 
+          onClick={onClick} 
+          onPointerOver={() => {
+            setHover(true);
+            document.body.style.cursor = 'pointer';
+          }} 
+          onPointerOut={() => {
+            setHover(false);
+            document.body.style.cursor = 'auto';
+          }}
+        >
+          {type === 'cat' && <Neko color={color} />}
+          {type === 'slime' && <Slime color={color} />}
+          {type === 'ghost' && <Ghost color={color} />}
+          {type === 'caier' && <ChibiCaier color={color} />}
+          
+          {hovered && (
+            <Html position={[0, type === 'caier' ? 2.5 : 2.2, 0]} center>
+              <div className={`bg-white/90 border-2 ${type === 'caier' ? 'border-purple-500 text-purple-700' : 'border-pink-400 text-pink-500'} px-4 py-2 text-sm whitespace-nowrap rounded-full font-bold shadow-lg animate-bounce`}>
+                {getHoverText()}
+              </div>
+            </Html>
+          )}
+        </group>
+      )}
+
+      {type === 'custom' && customModelUrl && <CustomModel url={customModelUrl} onClick={onClick} />}
       
-      {hovered && (
-        <Html position={[0, type === 'caier' ? 2.5 : 2.2, 0]} center>
-          <div className={`bg-white/90 border-2 ${type === 'caier' ? 'border-purple-500 text-purple-700' : 'border-pink-400 text-pink-500'} px-4 py-2 text-sm whitespace-nowrap rounded-full font-bold shadow-lg animate-bounce`}>
-            {getHoverText()}
+      {type === 'custom' && !customModelUrl && (
+        <Html center>
+          <div className="text-neon-cyan text-sm whitespace-nowrap bg-black/80 p-4 border border-neon-cyan">
+            Please upload a .glb model in SYS_MONITOR
           </div>
         </Html>
       )}
-    </group>
+    </Suspense>
   );
 };
 

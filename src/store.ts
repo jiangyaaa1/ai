@@ -22,7 +22,8 @@ interface AppState {
   isAutoPilot: boolean;
   isMinimized: boolean;
   petColor: string;
-  petType: 'cat' | 'slime' | 'ghost' | 'caier';
+  petType: 'cat' | 'slime' | 'ghost' | 'caier' | 'custom';
+  customModelUrl: string | null;
   config: ModelConfig;
   systemPrompt: string;
   addMessage: (msg: Omit<Message, 'id' | 'timestamp'>) => void;
@@ -32,7 +33,8 @@ interface AppState {
   setAutoPilot: (status: boolean) => void;
   setMinimized: (status: boolean) => void;
   setPetColor: (color: string) => void;
-  setPetType: (type: 'cat' | 'slime' | 'ghost' | 'caier') => void;
+  setPetType: (type: 'cat' | 'slime' | 'ghost' | 'caier' | 'custom') => void;
+  setCustomModelUrl: (url: string | null) => void;
   updateConfig: (config: Partial<ModelConfig>) => void;
   updateSystemPrompt: (prompt: string) => void;
 }
@@ -47,6 +49,7 @@ export const useStore = create<AppState>()(
       isMinimized: false,
       petColor: '#5c3a82',
       petType: 'caier',
+      customModelUrl: null,
       config: {
         provider: 'gemini',
         modelName: 'gemini-3.1-pro-preview',
@@ -67,6 +70,7 @@ export const useStore = create<AppState>()(
       setMinimized: (status) => set({ isMinimized: status }),
       setPetColor: (color) => set({ petColor: color }),
       setPetType: (type) => set({ petType: type }),
+      setCustomModelUrl: (url) => set({ customModelUrl: url }),
       updateConfig: (newConfig) =>
         set((state) => ({ config: { ...state.config, ...newConfig } })),
       updateSystemPrompt: (prompt) => set({ systemPrompt: prompt }),
