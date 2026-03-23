@@ -1,0 +1,5 @@
+{
+  "name": "OmniAgent Control Center",
+  "description": "An autonomous AI agent dashboard capable of local computer control, model management, and self-learning.",
+  "requestFramePermissions": []
+}
