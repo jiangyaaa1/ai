@@ -80,7 +80,7 @@ export const BottomPanels = () => {
   };
 
   return (
-    <div className="flex gap-2 h-64 mt-2">
+    <div className="flex gap-2 w-full h-full">
       {/* Quick Directives (Macros) */}
       <div className="sci-fi-panel flex-1 p-3 flex flex-col">
         <div className="text-xs font-bold border-b border-neon-cyan/30 pb-2 mb-2 flex items-center gap-2">

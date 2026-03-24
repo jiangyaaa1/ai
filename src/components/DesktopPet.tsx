@@ -4,7 +4,7 @@ import { Float, ContactShadows, Html, useGLTF, Center } from '@react-three/drei'
 import { useStore } from '../store';
 import * as THREE from 'three';
 import { runAgentLoop } from '../lib/agent';
-import { Mic, MicOff, Send, Loader2 } from 'lucide-react';
+import { Mic, MicOff, Send, Loader2, Star, Sparkles } from 'lucide-react';
 
 const CustomModel = ({ url, onClick }: { url: string, onClick: () => void }) => {
   const { scene } = useGLTF(url);
@@ -341,8 +341,78 @@ const AnimePet = ({ color, type, onClick }: { color: string, type: string, onCli
   );
 };
 
+const Room = ({ activeDecorations }: { activeDecorations: string[] }) => {
+  return (
+    <group>
+      {/* Floor */}
+      <mesh position={[0, -1.5, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+        <planeGeometry args={[20, 20]} />
+        <meshStandardMaterial color="#0a0a1a" />
+      </mesh>
+      {/* Grid helper for cyberpunk feel */}
+      <gridHelper args={[20, 20, '#00ffcc', '#00ffcc']} position={[0, -1.49, 0]} material-opacity={0.1} material-transparent />
+
+      {/* Back Wall */}
+      <mesh position={[0, 3.5, -5]} receiveShadow>
+        <planeGeometry args={[20, 10]} />
+        <meshStandardMaterial color="#050510" />
+      </mesh>
+
+      {/* Decorations */}
+      {activeDecorations.includes('rug') && (
+        <mesh position={[0, -1.48, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+          <circleGeometry args={[2.5, 32]} />
+          <meshStandardMaterial color="#e94560" />
+        </mesh>
+      )}
+
+      {activeDecorations.includes('plant') && (
+        <group position={[-3, -1.5, -2]}>
+          <mesh position={[0, 0.4, 0]} castShadow>
+            <cylinderGeometry args={[0.3, 0.2, 0.8]} />
+            <meshStandardMaterial color="#888" />
+          </mesh>
+          <mesh position={[0, 1.2, 0]} castShadow>
+            <sphereGeometry args={[0.6, 16, 16]} />
+            <meshStandardMaterial color="#2ecc71" />
+          </mesh>
+          <mesh position={[0.3, 1.0, 0.3]} castShadow>
+            <sphereGeometry args={[0.4, 16, 16]} />
+            <meshStandardMaterial color="#27ae60" />
+          </mesh>
+        </group>
+      )}
+
+      {activeDecorations.includes('lamp') && (
+        <group position={[3, -1.5, -2]}>
+          <mesh position={[0, 0.1, 0]} castShadow>
+            <cylinderGeometry args={[0.4, 0.5, 0.2]} />
+            <meshStandardMaterial color="#333" />
+          </mesh>
+          <mesh position={[0, 1.5, 0]} castShadow>
+            <cylinderGeometry args={[0.05, 0.05, 3]} />
+            <meshStandardMaterial color="#333" />
+          </mesh>
+          <mesh position={[0, 3, 0]} castShadow>
+            <coneGeometry args={[0.6, 0.8, 16]} />
+            <meshStandardMaterial color="#f1c40f" />
+          </mesh>
+          <pointLight position={[0, 2.8, 0]} intensity={2} color="#f1c40f" distance={10} />
+        </group>
+      )}
+
+      {activeDecorations.includes('cushion') && (
+        <mesh position={[0, -1.35, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+          <cylinderGeometry args={[1.2, 1.2, 0.3, 32]} />
+          <meshStandardMaterial color="#533483" />
+        </mesh>
+      )}
+    </group>
+  );
+};
+
 export const DesktopPet = () => {
-  const { setMinimized, petColor, petType, isAgentRunning } = useStore();
+  const { setMinimized, petColor, petType, isAgentRunning, petLevel, petXp, activeDecorations, toggleDecoration } = useStore();
   const [input, setInput] = useState('');
   const [isListening, setIsListening] = useState(false);
   const recognitionRef = useRef<any>(null);
@@ -406,19 +476,71 @@ export const DesktopPet = () => {
         </button>
       </div>
 
-      <div className="w-full flex-1 max-w-2xl">
-        <Canvas camera={{ position: [0, 1, 6], fov: 50 }}>
+      {/* Pet Stats & Decor Menu */}
+      <div className="absolute top-4 right-4 z-20 flex flex-col gap-2 items-end">
+        <div className="bg-black/80 border border-neon-cyan/50 p-3 rounded-lg backdrop-blur-sm w-64 shadow-[0_0_15px_rgba(0,255,204,0.1)]">
+          <div className="flex justify-between items-center mb-2">
+            <span className="text-neon-cyan font-bold flex items-center gap-1">
+              <Star size={14} className="text-yellow-400" /> LVL {petLevel}
+            </span>
+            <span className="text-neon-cyan/70 text-xs">{petXp} / {petLevel * 100} XP</span>
+          </div>
+          <div className="w-full bg-neon-cyan/20 h-2 rounded-full overflow-hidden">
+            <div className="bg-neon-cyan h-full transition-all duration-500 relative" style={{ width: `${(petXp / (petLevel * 100)) * 100}%` }}>
+              <div className="absolute inset-0 bg-white/30 animate-pulse"></div>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-black/80 border border-neon-cyan/50 p-3 rounded-lg backdrop-blur-sm w-64 mt-2 shadow-[0_0_15px_rgba(0,255,204,0.1)]">
+          <div className="text-neon-cyan text-xs font-bold mb-2 flex items-center gap-1">
+            <Sparkles size={14} /> SPACE DECORATIONS
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            {['rug', 'plant', 'lamp', 'cushion'].map(decor => {
+              const isUnlocked = petLevel >= (
+                decor === 'rug' ? 2 :
+                decor === 'plant' ? 3 :
+                decor === 'lamp' ? 4 : 5
+              );
+              
+              return (
+                <button
+                  key={decor}
+                  onClick={() => isUnlocked && toggleDecoration(decor)}
+                  disabled={!isUnlocked}
+                  className={`text-xs py-1.5 px-2 border transition-colors ${
+                    !isUnlocked ? 'bg-black/50 text-gray-600 border-gray-800 cursor-not-allowed' :
+                    activeDecorations.includes(decor) ? 'bg-neon-cyan text-black border-neon-cyan shadow-[0_0_10px_rgba(0,255,204,0.5)]' : 'bg-transparent text-neon-cyan/70 border-neon-cyan/30 hover:border-neon-cyan'
+                  }`}
+                  title={!isUnlocked ? `Unlocks at Level ${decor === 'rug' ? 2 : decor === 'plant' ? 3 : decor === 'lamp' ? 4 : 5}` : ''}
+                >
+                  {decor.toUpperCase()}
+                  {!isUnlocked && ' 🔒'}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      <div className="w-full flex-1 max-w-4xl">
+        <Canvas shadows camera={{ position: [0, 2, 8], fov: 50 }}>
           <ambientLight intensity={0.6} />
-          <directionalLight position={[5, 5, 5]} intensity={1.5} />
+          <directionalLight position={[5, 5, 5]} intensity={1.5} castShadow />
           <directionalLight position={[-5, 5, 5]} intensity={0.5} color={petColor} />
           
+          <Room activeDecorations={activeDecorations} />
+
           <Float
             speed={2.5} // Animation speed
             rotationIntensity={0.2} // XYZ rotation intensity
             floatIntensity={2} // Up/down float intensity
             floatingRange={[-0.2, 0.2]} // Range of y-axis values the object will float within
           >
-            <AnimePet color={petColor} type={petType || 'cat'} onClick={() => setMinimized(false)} />
+            <group scale={[Math.min(1 + (petLevel - 1) * 0.05, 2.5), Math.min(1 + (petLevel - 1) * 0.05, 2.5), Math.min(1 + (petLevel - 1) * 0.05, 2.5)]}>
+              <AnimePet color={petColor} type={petType || 'cat'} onClick={() => setMinimized(false)} />
+            </group>
           </Float>
           
           <ContactShadows position={[0, -1.5, 0]} opacity={0.4} scale={10} blur={2} far={4} />

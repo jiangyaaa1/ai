@@ -58,7 +58,7 @@ export const Terminal = () => {
 
   return (
     <div 
-      className="flex-1 sci-fi-panel p-4 flex flex-col font-mono text-sm overflow-hidden"
+      className="w-full h-full sci-fi-panel p-4 flex flex-col font-mono text-sm overflow-hidden"
       onClick={() => inputRef.current?.focus()}
     >
       <div className="flex justify-between items-center mb-4 border-b border-neon-cyan/30 pb-2">

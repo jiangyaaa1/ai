@@ -123,7 +123,11 @@ export const runAgentLoop = async (userMessage: string) => {
       ? `\n\nUSER'S MEMORIES & FACTS (Do not forget these):\n${store.memories.map(m => `- ${m.content}`).join('\n')}`
       : '';
       
-    const fullSystemPrompt = store.systemPrompt + memoryContext;
+    const skillsContext = store.skills.length > 0
+      ? `\n\nLEARNED SKILLS (You can use these when requested):\n${store.skills.map(s => `[${s.name}]: ${s.description}\nInstructions: ${s.instruction}`).join('\n\n')}`
+      : '';
+      
+    const fullSystemPrompt = store.systemPrompt + memoryContext + skillsContext;
 
     if (store.config.provider === 'gemini') {
       const ai = new GoogleGenAI({ apiKey });
@@ -161,6 +165,8 @@ export const runAgentLoop = async (userMessage: string) => {
             });
             
             const output = await executeLocalCommand(args.command);
+            
+            store.addXp(15); // Award XP for executing commands
             
             store.addMessage({
               role: 'system',
@@ -317,6 +323,8 @@ export const runAgentLoop = async (userMessage: string) => {
               });
               
               const output = await executeLocalCommand(args.command);
+              
+              store.addXp(15); // Award XP for executing commands
               
               store.addMessage({
                 role: 'system',

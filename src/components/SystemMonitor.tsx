@@ -35,7 +35,7 @@ const Graph = ({ label, value, color = "text-neon-cyan" }: { label: string, valu
 };
 
 export const SystemMonitor = ({ onOpenSetup }: { onOpenSetup: () => void }) => {
-  const { isLocalConnected, config, updateConfig, isAutoPilot, setAutoPilot, petColor, setPetColor, petType, setPetType, setCustomModelUrl, isVisionActive, setVisionActive, isMiningActive, setMiningActive, isBrainCoreActive, setBrainCoreActive } = useStore();
+  const { isLocalConnected, config, updateConfig, isAutoPilot, setAutoPilot, petColor, setPetColor, petType, setPetType, setCustomModelUrl, isVisionActive, setVisionActive, isMiningActive, setMiningActive, isBrainCoreActive, setBrainCoreActive, isSkillManagerActive, setSkillManagerActive } = useStore();
   const [cpu, setCpu] = useState(32);
   const [ram, setRam] = useState(64);
   const [net, setNet] = useState(12);
@@ -51,7 +51,7 @@ export const SystemMonitor = ({ onOpenSetup }: { onOpenSetup: () => void }) => {
   }, []);
 
   return (
-    <div className="w-64 sci-fi-panel flex flex-col p-3 overflow-y-auto">
+    <div className="w-full h-full sci-fi-panel flex flex-col p-3 overflow-y-auto">
       <div className="text-center border-b border-neon-cyan/30 pb-2 mb-4">
         <h1 className="text-lg font-bold sci-fi-text tracking-widest">SYS_MONITOR</h1>
         <div className="text-[10px] text-neon-cyan/70">OmniAgent Core v1.0.0</div>
@@ -133,6 +133,14 @@ export const SystemMonitor = ({ onOpenSetup }: { onOpenSetup: () => void }) => {
           className={`w-full py-2 text-xs font-bold tracking-widest border transition-all ${isBrainCoreActive ? 'bg-purple-500 text-black border-purple-500 shadow-[0_0_10px_rgba(168,85,247,0.8)]' : 'bg-transparent text-purple-500 border-purple-500 hover:bg-purple-500/20'}`}
         >
           {isBrainCoreActive ? '🧠 BRAIN: ACTIVE' : '🧠 BRAIN: OFFLINE'}
+        </button>
+
+        {/* Skill Manager Toggle */}
+        <button 
+          onClick={() => setSkillManagerActive(!isSkillManagerActive)}
+          className={`w-full py-2 text-xs font-bold tracking-widest border transition-all ${isSkillManagerActive ? 'bg-blue-500 text-black border-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.8)]' : 'bg-transparent text-blue-500 border-blue-500 hover:bg-blue-500/20'}`}
+        >
+          {isSkillManagerActive ? '📚 SKILLS: ACTIVE' : '📚 SKILLS: OFFLINE'}
         </button>
 
         {/* Auto-Pilot Toggle */}
