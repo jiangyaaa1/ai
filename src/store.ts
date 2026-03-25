@@ -163,7 +163,12 @@ export const useStore = create<AppState>()(
       setPetColor: (color) => set({ petColor: color }),
       setPetType: (type) => set({ petType: type }),
       setCustomModelUrl: (url) => set({ customModelUrl: url }),
-      togglePanel: (panel) => set((state) => ({ [panel]: !state[panel] })),
+      togglePanel: (panel) => set((state) => {
+        if (panel === 'sysMonitor') return { showSysMonitor: !state.showSysMonitor };
+        if (panel === 'quickDirectives') return { showQuickDirectives: !state.showQuickDirectives };
+        if (panel === 'fileSystemMap') return { showFileSystemMap: !state.showFileSystemMap };
+        return state;
+      }),
       setActiveTab: (tab) => set({ activeTab: tab }),
       updateConfig: (newConfig) =>
         set((state) => ({ config: { ...state.config, ...newConfig } })),
