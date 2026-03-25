@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Folder, FileText, Terminal as TerminalIcon, Shield, Cpu, Search, Code } from 'lucide-react';
+import { Folder, FileText, Terminal as TerminalIcon, Shield, Cpu, Search, Code, X } from 'lucide-react';
 import { useStore } from '../store';
 import { runAgentLoop } from '../lib/agent';
 
@@ -61,7 +61,7 @@ const KEYBOARD_ROWS = [
 
 export const BottomPanels = () => {
   const [activeKey, setActiveKey] = useState<string | null>(null);
-  const { isAgentRunning } = useStore();
+  const { isAgentRunning, showQuickDirectives, showFileSystemMap, togglePanel } = useStore();
 
   // Fake keyboard typing animation for effect
   useEffect(() => {
@@ -82,43 +82,59 @@ export const BottomPanels = () => {
   return (
     <div className="flex gap-2 w-full h-full">
       {/* Quick Directives (Macros) */}
-      <div className="sci-fi-panel flex-1 p-3 flex flex-col">
-        <div className="text-xs font-bold border-b border-neon-cyan/30 pb-2 mb-2 flex items-center gap-2">
-          <TerminalIcon size={14} /> QUICK_DIRECTIVES
+      {showQuickDirectives && (
+        <div className="sci-fi-panel flex-1 p-3 flex flex-col relative">
+          <button 
+            onClick={() => togglePanel('quickDirectives')}
+            className="absolute top-2 right-2 text-neon-cyan/50 hover:text-neon-cyan transition-colors"
+          >
+            <X size={14} />
+          </button>
+          <div className="text-xs font-bold border-b border-neon-cyan/30 pb-2 mb-2 flex items-center gap-2">
+            <TerminalIcon size={14} /> QUICK_DIRECTIVES
+          </div>
+          <div className="flex-1 flex flex-col gap-2 overflow-y-auto pr-1">
+            {DIRECTIVES.map((dir) => (
+              <button
+                key={dir.id}
+                onClick={() => handleDirective(dir.prompt)}
+                disabled={isAgentRunning}
+                className="flex items-center gap-2 w-full text-left p-2 border border-neon-cyan/30 hover:bg-neon-cyan hover:text-black transition-colors disabled:opacity-50 disabled:cursor-not-allowed group"
+              >
+                <span className="text-neon-cyan group-hover:text-black transition-colors">{dir.icon}</span>
+                <span className="text-[10px] font-bold tracking-wider">{dir.label}</span>
+              </button>
+            ))}
+          </div>
         </div>
-        <div className="flex-1 flex flex-col gap-2 overflow-y-auto pr-1">
-          {DIRECTIVES.map((dir) => (
-            <button
-              key={dir.id}
-              onClick={() => handleDirective(dir.prompt)}
-              disabled={isAgentRunning}
-              className="flex items-center gap-2 w-full text-left p-2 border border-neon-cyan/30 hover:bg-neon-cyan hover:text-black transition-colors disabled:opacity-50 disabled:cursor-not-allowed group"
-            >
-              <span className="text-neon-cyan group-hover:text-black transition-colors">{dir.icon}</span>
-              <span className="text-[10px] font-bold tracking-wider">{dir.label}</span>
-            </button>
-          ))}
-        </div>
-      </div>
+      )}
 
       {/* File Explorer */}
-      <div className="sci-fi-panel flex-1 p-2 overflow-y-auto hidden sm:block">
-        <div className="text-xs font-bold border-b border-neon-cyan/30 pb-2 mb-2 pl-2">
-          FILE_SYSTEM_MAP
+      {showFileSystemMap && (
+        <div className="sci-fi-panel flex-1 p-2 overflow-y-auto hidden sm:block relative">
+          <button 
+            onClick={() => togglePanel('fileSystemMap')}
+            className="absolute top-2 right-2 text-neon-cyan/50 hover:text-neon-cyan transition-colors"
+          >
+            <X size={14} />
+          </button>
+          <div className="text-xs font-bold border-b border-neon-cyan/30 pb-2 mb-2 pl-2">
+            FILE_SYSTEM_MAP
+          </div>
+          <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
+            {FOLDER_ITEMS.map((item, i) => (
+              <div key={i} className="flex flex-col items-center justify-center p-2 hover:bg-neon-cyan/20 cursor-pointer border border-transparent hover:border-neon-cyan/50 transition-colors group">
+                {item.type === 'folder' ? (
+                  <Folder size={20} className="text-neon-cyan group-hover:text-white" />
+                ) : (
+                  <FileText size={20} className="text-neon-cyan/70 group-hover:text-white" />
+                )}
+                <span className="text-[9px] mt-1 truncate w-full text-center">{item.name}</span>
+              </div>
+            ))}
+          </div>
         </div>
-        <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
-          {FOLDER_ITEMS.map((item, i) => (
-            <div key={i} className="flex flex-col items-center justify-center p-2 hover:bg-neon-cyan/20 cursor-pointer border border-transparent hover:border-neon-cyan/50 transition-colors group">
-              {item.type === 'folder' ? (
-                <Folder size={20} className="text-neon-cyan group-hover:text-white" />
-              ) : (
-                <FileText size={20} className="text-neon-cyan/70 group-hover:text-white" />
-              )}
-              <span className="text-[9px] mt-1 truncate w-full text-center">{item.name}</span>
-            </div>
-          ))}
-        </div>
-      </div>
+      )}
 
       {/* Virtual Keyboard */}
       <div className="sci-fi-panel flex-[1.5] p-2 flex flex-col justify-between hidden lg:flex">

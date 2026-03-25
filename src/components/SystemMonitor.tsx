@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useStore } from '../store';
-import { Activity, Cpu, HardDrive, Network, Settings, Server } from 'lucide-react';
+import { Activity, Cpu, HardDrive, Network, Settings, Server, X } from 'lucide-react';
 
 const Graph = ({ label, value, color = "text-neon-cyan" }: { label: string, value: number, color?: string }) => {
   // Generate fake wave data
@@ -35,7 +35,7 @@ const Graph = ({ label, value, color = "text-neon-cyan" }: { label: string, valu
 };
 
 export const SystemMonitor = ({ onOpenSetup }: { onOpenSetup: () => void }) => {
-  const { isLocalConnected, config, updateConfig, isAutoPilot, setAutoPilot, petColor, setPetColor, petType, setPetType, setCustomModelUrl, isVisionActive, setVisionActive, isMiningActive, setMiningActive, isBrainCoreActive, setBrainCoreActive, isSkillManagerActive, setSkillManagerActive } = useStore();
+  const { isLocalConnected, config, updateConfig, isAutoPilot, setAutoPilot, petColor, setPetColor, petType, setPetType, setCustomModelUrl, isVisionActive, setVisionActive, isMiningActive, setMiningActive, isBrainCoreActive, setBrainCoreActive, isSkillManagerActive, setSkillManagerActive, togglePanel } = useStore();
   const [cpu, setCpu] = useState(32);
   const [ram, setRam] = useState(64);
   const [net, setNet] = useState(12);
@@ -51,7 +51,13 @@ export const SystemMonitor = ({ onOpenSetup }: { onOpenSetup: () => void }) => {
   }, []);
 
   return (
-    <div className="w-full h-full sci-fi-panel flex flex-col p-3 overflow-y-auto">
+    <div className="w-full h-full sci-fi-panel flex flex-col p-3 overflow-y-auto relative">
+      <button 
+        onClick={() => togglePanel('sysMonitor')}
+        className="absolute top-2 right-2 text-neon-cyan/50 hover:text-neon-cyan transition-colors"
+      >
+        <X size={16} />
+      </button>
       <div className="text-center border-b border-neon-cyan/30 pb-2 mb-4">
         <h1 className="text-lg font-bold sci-fi-text tracking-widest">SYS_MONITOR</h1>
         <div className="text-[10px] text-neon-cyan/70">OmniAgent Core v1.0.0</div>
@@ -192,7 +198,7 @@ export const SystemMonitor = ({ onOpenSetup }: { onOpenSetup: () => void }) => {
             <option value="gemini" className="bg-[#040b14]">GEMINI</option>
             <option value="deepseek" className="bg-[#040b14]">DEEPSEEK</option>
             <option value="qwen" className="bg-[#040b14]">QWEN (通义千问)</option>
-            <option value="zhipu" className="bg-[#040b14]">ZHIPU (智谱 GLM)</option>
+            <option value="zhipu" className="bg-[#040b14]">Z.AI (智谱 GLM)</option>
             <option value="moonshot" className="bg-[#040b14]">MOONSHOT (Kimi)</option>
             <option value="ollama" className="bg-[#040b14]">OLLAMA (Local)</option>
             <option value="openai" className="bg-[#040b14]">OPENAI</option>

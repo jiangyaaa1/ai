@@ -46,11 +46,15 @@ interface AppState {
   isMiningActive: boolean;
   isBrainCoreActive: boolean;
   isSkillManagerActive: boolean;
+  showSysMonitor: boolean;
+  showQuickDirectives: boolean;
+  showFileSystemMap: boolean;
   tokensMined: number;
   tokensConsumed: number;
   activeTab: string;
   config: ModelConfig;
   systemPrompt: string;
+  togglePanel: (panel: 'sysMonitor' | 'quickDirectives' | 'fileSystemMap') => void;
   setActiveTab: (tab: string) => void;
   addMessage: (msg: Omit<Message, 'id' | 'timestamp'>) => void;
   clearMessages: () => void;
@@ -90,6 +94,9 @@ export const useStore = create<AppState>()(
       isMiningActive: false,
       isBrainCoreActive: false,
       isSkillManagerActive: false,
+      showSysMonitor: true,
+      showQuickDirectives: true,
+      showFileSystemMap: true,
       activeTab: 'MAIN',
       tokensMined: 1024,
       tokensConsumed: 512,
@@ -156,6 +163,7 @@ export const useStore = create<AppState>()(
       setPetColor: (color) => set({ petColor: color }),
       setPetType: (type) => set({ petType: type }),
       setCustomModelUrl: (url) => set({ customModelUrl: url }),
+      togglePanel: (panel) => set((state) => ({ [panel]: !state[panel] })),
       setActiveTab: (tab) => set({ activeTab: tab }),
       updateConfig: (newConfig) =>
         set((state) => ({ config: { ...state.config, ...newConfig } })),
@@ -173,7 +181,10 @@ export const useStore = create<AppState>()(
         skills: state.skills,
         petLevel: state.petLevel,
         petXp: state.petXp,
-        activeDecorations: state.activeDecorations
+        activeDecorations: state.activeDecorations,
+        showSysMonitor: state.showSysMonitor,
+        showQuickDirectives: state.showQuickDirectives,
+        showFileSystemMap: state.showFileSystemMap
       }),
     }
   )
